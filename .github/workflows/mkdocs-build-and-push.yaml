@@ -1,0 +1,50 @@
+name: mkdocs build and push
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout sdk
+        uses: actions/checkout@v4
+        with:
+          repository: offline-function-calling/sdk
+          path: sdk
+      - name: checkout site
+        uses: actions/checkout@v4
+        with:
+          path: org
+
+      - name: configure bot
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: sdk/uv.lock
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: sdk/pyproject.toml
+
+      - name: install deps
+        run: |
+          cd sdk/
+          uv sync --locked --all-extras --dev
+
+      - name: build and push
+        run: |
+          cd sdk/
+          source .venv/bin/activate.sh
+          cd ../org/
+          mkdocs gh-deploy --force \
+            --message 'chore: deploy offline-function-calling/sdk@{sha}' \
+            --remote-branch 'pages' --config-file ../sdk/mkdocs.yaml
