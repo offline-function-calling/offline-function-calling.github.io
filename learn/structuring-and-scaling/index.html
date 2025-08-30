@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script>
+        // for search plugin notably
+        const base_url = "https://offline-function-calling.github.io/";
+    </script>
+    <script>
+        const darkTheme = window.matchMedia("(prefers-color-scheme: dark)");
+        darkTheme.onchange = (e) => {
+            if (e.matches) {
+                document.documentElement.classList.add("dark")
+                localStorage.theme = 'dark';
+            } else {
+                document.documentElement.classList.remove("dark")
+                localStorage.removeItem("theme")
+            }
+        };
+
+        // On page load. Priotiry to lcaolStorage
+        if (localStorage.theme === "dark") {
+            document.documentElement.classList.add("dark")
+        } else if (localStorage.theme === "light") {
+            document.documentElement.classList.remove("dark")
+        } else if (darkTheme.matches) {
+            document.documentElement.classList.add("dark")
+        } else {
+            document.documentElement.classList.remove("dark")
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Structuring and Scaling - Offline Function Calling with Gemma</title>
+    
+
+
+<title>Structuring and Scaling</title>
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://offline-function-calling.github.io/learn/structuring-and-scaling/">
+
+
+<!-- Open Graph (Facebook, LinkedIn) -->
+
+<meta property="og:title" content="Structuring and Scaling">
+
+
+
+
+
+<meta property="og:url" content="https://offline-function-calling.github.io/learn/structuring-and-scaling/">
+
+
+
+
+
+
+<!-- Twitter Card -->
+
+<meta name="twitter:title" content="Structuring and Scaling">
+
+
+
+
+
+
+<!-- JSON-LD Structured Data -->
+
+
+
+    <link rel="icon" href="../../img/favicon.ico">
+    <link href="../../css/base.css" rel="stylesheet">
+    <link href="../../css/geist.css" rel="stylesheet">
+    
+    <link href="../../css/pygments/github-dark.css" rel="stylesheet">
+    
+
+    <script src="../../js/callbacks.js"></script>
+
+    
+
+    
+
+    
+
+</head>
+
+<body class="w-screen overflow-x-hidden bg-foreground md:bg-background text-foreground scroll-smooth m-0 p-0">
+    <div id="inner-body"
+        class="min-h-screen bg-background origin-[top_center_0px] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+        <header
+    class="border-grid sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div class="w-full mx-auto 3xl:max-w-8xl">
+        <div
+            class="xl:px-6 h-14 w-full max-w-8xl mx-auto px-4 border-x border-grid flex flex-row justify-between items-center">
+            <div class="mr-4 hidden md:flex">
+                <a href="/" class="mr-4 flex items-center gap-2 lg:mr-6">
+                    
+
+<iconify-icon icon="streamline:ai-chip-spark" noobserver></iconify-icon>
+
+
+                    <h1 class="hidden lg:inline-block font-bold text-md">
+                        
+                        Offline Function Calling with Gemma
+                        
+                    </h1>
+                </a>
+            </div>
+            <button
+                class="cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground py-2 -ml-2 mr-2 h-8 w-8 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+                type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:R15u6ja:"
+                data-state="closed" onclick="onMobileMenuButtonClick(event)">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="!size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5"></path>
+                </svg>
+                <span class="sr-only">Toggle Menu</span>
+            </button>
+            <div class="flex flex-1 items-center justify-between gap-2 md:justify-end">
+                <button onclick="onSearchBarClick(event)"
+    class="cursor-pointer inline-flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border border-input hover:bg-accent hover:text-accent-foreground px-4 py-2 relative h-8 w-full justify-start rounded-[0.5rem] bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-40 lg:w-56 xl:w-64">
+    <span class="hidden lg:inline-flex">Search documentation...</span>
+    <span class="inline-flex lg:hidden">Search...</span>
+    <kbd
+        class="pointer-events-none absolute right-[0.3rem] top-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+        <span class="text-xs">⌘</span>K
+    </kbd>
+</button>
+<dialog id="search-dialog" onclick="onSearchDialogClick(event)"
+    class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background rounded-lg shadow-lg border overflow-hidden p-0">
+    <div class="w-lg gap-4">
+        <div class="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground">
+            <div class="w-full flex items-center border-b px-3" cmdk-input-wrapper="">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="mr-2 h-4 w-4 shrink-0 opacity-50">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                </svg>
+                <!-- <script>
+                    let debounceTimer;
+                    const onInputHandler = function (event) {
+                        const query = event.target.value;
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(() => {
+                            if (searchWorker && (query.length > 2)) {
+                                console.log(`Posting message { "query": "${query}" }`)
+                                // https://lunrjs.com/guides/searching.html
+                                // we should append a wilcard and also a boost on exact term
+                                const lunrQuery = `${query}^10 ${query}* ${query}~1`;
+                                searchWorker.postMessage({ "query": lunrQuery });
+                            } else if (query.length > 2) {
+                                console.warn("searchWorker is not defined")
+                            } else {
+                                const results = document.getElementById("mkdocs-search-results");
+                                if (results) {
+                                    while (results.firstChild) {
+                                        results.removeChild(results.firstChild);
+                                    }
+                                }
+                            }
+                        }, 300);
+                    };
+                </script> -->
+                <input
+                    class="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Type a command or search..." autocomplete="off" autocorrect="off" spellcheck="false"
+                    aria-autocomplete="list" role="combobox" aria-expanded="true" type="text" value=""
+                    oninput="onInputHandler(event)">
+            </div>
+        </div>
+        <div id="mkdocs-search-results" class="max-h-[300px] overflow-y-auto overflow-x-hidden">
+            <!-- search results go there -->
+        </div>
+    </div>
+</dialog>
+<script>
+    document.removeEventListener("keydown", searchShortcutHandler);
+    document.addEventListener("keydown", searchShortcutHandler);
+</script>
+                <div class="flex items-center gap-0.5">
+                    
+                    <button
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-8 w-8 px-0"><a
+                            target="_blank" rel="noreferrer" href="https://github.com/offline-function-calling/sdk">
+                            
+                            <svg viewBox="0 0 438.549 438.549" class="h-4 w-4">
+    <path fill="currentColor"
+        d="M409.132 114.573c-19.608-33.596-46.205-60.194-79.798-79.8-33.598-19.607-70.277-29.408-110.063-29.408-39.781 0-76.472 9.804-110.063 29.408-33.596 19.605-60.192 46.204-79.8 79.8C9.803 148.168 0 184.854 0 224.63c0 47.78 13.94 90.745 41.827 128.906 27.884 38.164 63.906 64.572 108.063 79.227 5.14.954 8.945.283 11.419-1.996 2.475-2.282 3.711-5.14 3.711-8.562 0-.571-.049-5.708-.144-15.417a2549.81 2549.81 0 01-.144-25.406l-6.567 1.136c-4.187.767-9.469 1.092-15.846 1-6.374-.089-12.991-.757-19.842-1.999-6.854-1.231-13.229-4.086-19.13-8.559-5.898-4.473-10.085-10.328-12.56-17.556l-2.855-6.57c-1.903-4.374-4.899-9.233-8.992-14.559-4.093-5.331-8.232-8.945-12.419-10.848l-1.999-1.431c-1.332-.951-2.568-2.098-3.711-3.429-1.142-1.331-1.997-2.663-2.568-3.997-.572-1.335-.098-2.43 1.427-3.289 1.525-.859 4.281-1.276 8.28-1.276l5.708.853c3.807.763 8.516 3.042 14.133 6.851 5.614 3.806 10.229 8.754 13.846 14.842 4.38 7.806 9.657 13.754 15.846 17.847 6.184 4.093 12.419 6.136 18.699 6.136 6.28 0 11.704-.476 16.274-1.423 4.565-.952 8.848-2.383 12.847-4.285 1.713-12.758 6.377-22.559 13.988-29.41-10.848-1.14-20.601-2.857-29.264-5.14-8.658-2.286-17.605-5.996-26.835-11.14-9.235-5.137-16.896-11.516-22.985-19.126-6.09-7.614-11.088-17.61-14.987-29.979-3.901-12.374-5.852-26.648-5.852-42.826 0-23.035 7.52-42.637 22.557-58.817-7.044-17.318-6.379-36.732 1.997-58.24 5.52-1.715 13.706-.428 24.554 3.853 10.85 4.283 18.794 7.952 23.84 10.994 5.046 3.041 9.089 5.618 12.135 7.708 17.705-4.947 35.976-7.421 54.818-7.421s37.117 2.474 54.823 7.421l10.849-6.849c7.419-4.57 16.18-8.758 26.262-12.565 10.088-3.805 17.802-4.853 23.134-3.138 8.562 21.509 9.325 40.922 2.279 58.24 15.036 16.18 22.559 35.787 22.559 58.817 0 16.178-1.958 30.497-5.853 42.966-3.9 12.471-8.941 22.457-15.125 29.979-6.191 7.521-13.901 13.85-23.131 18.986-9.232 5.14-18.182 8.85-26.84 11.136-8.662 2.286-18.415 4.004-29.263 5.146 9.894 8.562 14.842 22.077 14.842 40.539v60.237c0 3.422 1.19 6.279 3.572 8.562 2.379 2.279 6.136 2.95 11.276 1.995 44.163-14.653 80.185-41.062 108.068-79.226 27.88-38.161 41.825-81.126 41.825-128.906-.01-39.771-9.818-76.454-29.414-110.049z">
+    </path>
+</svg>
+                            <span class="sr-only">GitHub</span>
+                            
+                        </a>
+                    </button>
+                    
+                    <button
+                        class="cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground py-2 group/toggle h-8 w-8 px-0"
+                        onclick="onThemeSwitch(event)">
+                        
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round"
+    class="h-4 w-4 dark:hidden not-dark:block">
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+</svg>
+                        
+                        
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round"
+    class="h-4 w-4 not-dark:hidden dark:block">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2" />
+    <path d="M12 20v2" />
+    <path d="m4.93 4.93 1.41 1.41" />
+    <path d="m17.66 17.66 1.41 1.41" />
+    <path d="M2 12h2" />
+    <path d="M20 12h2" />
+    <path d="m6.34 17.66-1.41 1.41" />
+    <path d="m19.07 4.93-1.41 1.41" />
+</svg>
+                        
+                        <span class="sr-only">Toggle theme</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+        <div class="border-grid flex flex-1 flex-col">
+            <div class="w-full mx-auto 3xl:max-w-8xl">
+                <div
+                    class="px-4 w-full max-w-8xl mx-auto xl:px-6 flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
+                    <aside
+                        class="border-grid fixed top-14 z-30 hidden h-[calc(100vh-3.55rem)] w-full shrink-0 border-r md:sticky md:block">
+                        <div
+    class="no-scrollbar [&::-webkit-scrollbar]:hidden h-full overflow-auto py-6 pr-4 lg:py-8 flex flex-col gap-[.125rem]">
+    
+    
+    
+
+    
+    
+    <a href="../.." 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Overview
+    
+
+    
+
+    
+
+    
+</a>
+    
+    
+
+
+    
+    
+    <div class="flex flex-col gap-1 mt-5 first:mt-0">
+        <h4 class="rounded-md px-2 py-1 text-sm font-semibold">Setup</h4>
+        <div class="grid grid-flow-row auto-rows-max gap-[.125rem]">
+            
+            <a href="../../setup/cli/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    CLI
+    
+
+    
+
+    
+
+    
+</a>
+            
+            <a href="../../setup/models/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Models
+    
+
+    
+
+    
+
+    
+</a>
+            
+            <a href="../../setup/tools/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Tools
+    
+
+    
+
+    
+
+    
+</a>
+            
+        </div>
+    </div>
+    
+    
+    
+    <div class="flex flex-col gap-1 mt-5 first:mt-0">
+        <h4 class="rounded-md px-2 py-1 text-sm font-semibold">Learn</h4>
+        <div class="grid grid-flow-row auto-rows-max gap-[.125rem]">
+            
+            <a href="../hello-world/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Hello, Function Calling!
+    
+
+    
+
+    
+
+    
+</a>
+            
+            <a href="./" data-active 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Structuring and Scaling
+    
+
+    
+
+    
+
+    
+</a>
+            
+            <a href="../dynamic-function-generation/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Dynamic Function Generation
+    
+
+    
+
+    
+
+    
+</a>
+            
+            <a href="../multimodal-input/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Multimodal Input
+    
+
+    
+
+    
+
+    
+</a>
+            
+        </div>
+    </div>
+    
+    
+    
+    <div class="flex flex-col gap-1 mt-5 first:mt-0">
+        <h4 class="rounded-md px-2 py-1 text-sm font-semibold">Benchmarks</h4>
+        <div class="grid grid-flow-row auto-rows-max gap-[.125rem]">
+            
+            <a href="../../bench/leaderboard/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Leaderboard
+    
+
+    
+
+    
+
+    
+</a>
+            
+            <a href="../../bench/methodology/" 
+    class="text-sm flex shrink-0 h-8 w-full items-center rounded-lg px-2 text-foreground underline-offset-2 font-normal hover:bg-accent hover:text-accent-foreground data-active:bg-accent data-active:font-medium data-active:text-accent-foreground">
+    
+    Methodology
+    
+
+    
+
+    
+
+    
+</a>
+            
+        </div>
+    </div>
+    
+    
+    
+</div>
+                    </aside>
+                    <main class="relative py-6 lg:gap-10 lg:py-8  xl:grid xl:grid-cols-[1fr_300px] ">
+                        <div class="mx-auto w-full min-w-0  xl:max-w-2xl ">
+                            <article class="typography w-full">
+    
+    <div class="mb-4 flex items-center space-x-1 text-sm leading-none text-muted-foreground">
+    
+
+
+<span class="truncate">Learn</span>
+
+
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right h-3.5 w-3.5">
+    <path d="m9 18 6-6-6-6"></path>
+</svg>
+<div class="text-foreground">Structuring and Scaling</div>
+
+</div>
+    
+    
+    <h1 class="tracking-tight">Structuring and Scaling</h1>
+    
+    
+    <p class="summary">
+        Scaling function calling by adding structure to our processes.
+    </p>
+    
+    <style>
+  html.dark .typography details summary::after { filter: invert(100%); }
+</style>
+
+<h2 id="how-we-did-it">How we did it</h2>
+<p>In the <a href="../hello-world/">previous tutorial</a>, we learned that function calling involves five key steps: <em>instruction</em>, <em>discovery</em>, <em>calling</em>, <em>parsing</em>, and <em>execution</em>. We covered in each step in detail while enabling a Gemma 3 model to call a <code>fetch_weather</code> function when we ask it for the current weather in a certain place. Here's a recap of how we did it:</p>
+<ul>
+<li>We wrote two prompts for the model: an instruction prompt that taught the model the general rules for how to call functions, and a discovery prompt that described our specific <code>fetch_weather</code> function, including its purpose and parameters.</li>
+<li>We wrote a code that used the <a href="../../setup/models/"><code>ollama</code></a> REST API to send our prompts and a task ("What's the weather in Pune?") to the model running offline on our machine.</li>
+<li>The model understood the instructions and produced a function call in response to our message.</li>
+<li>We wrote code to parse the function calls from the model's response, and used <a href="../../setup/tools/#microsandbox"><code>microsandbox</code></a> to execute the function code in a secure sandbox, and return the function's output to the model.</li>
+<li>The model acknowledged and understood the function's output, and returned a natural language response that answered our original question about the weather in Pune.</li>
+</ul>
+<h2 id="what-we-can-do-better">What we can do better</h2>
+<p>Towards the end of the tutorial, we found several things to improve:</p>
+<ul>
+<li>The current function discovery prompt is hard-coded to direct the model on how and when to call the <code>fetch_weather</code> function. This is unscalable - imagine having to write similar instructions for hundreds of functions!</li>
+<li>When calling multiple functions, the model needs to be able to keep track of which function call returned what output. The current prompt cannot properly do this.</li>
+<li>With the current prompt, the model cannot perform complex tasks that require it to call functions in parallel (like asking for the weather in multiple cities), and/or chain function calls in a particular sequence (like comparing the weather between two cities and booking a flight to the city with the more pleasant weather).</li>
+</ul>
+<p>We'll take a look at how to address these problems in detail over the course of this tutorial.</p>
+<h2 id="how-we-can-do-it-better">How we can do it better</h2>
+<p>Most of the above problems can be addressed by modifying the instructions (prompts) provided to the model. This section thus focuses on modifying and re-writing portions of the function calling prompt to improve the function discovery and calling capabilities of the model.</p>
+<h3 id="using-function-specifications-for-discovery">Using function specifications for discovery</h3>
+<p>In the previous tutorial, <a href="../hello-world/#letting-the-model-discover-functions">we gave the model the following instructions</a> so that it can discover and use the <code>fetch_weather</code> function:</p>
+<div class="admonition note">
+<p>When I ask for the current weather for a particular place, you can call the <code>fetch_weather</code> function and pass the <code>place</code> parameter (a string) with the place I mention. The place can be the name of a city or famous landmark, or an airport code. The function will produce a JSON object containing information about the weather condition, temperature and winds for the given place.</p>
+</div>
+<p>Breaking the prompt down, we see that it provides the model with several important pieces of information:</p>
+<blockquote>
+<p>When I ask for the current weather for a particular place, ...</p>
+</blockquote>
+<p>This gives the model examples of tasks that can be accomplished by calling this function.</p>
+<blockquote>
+<p>... you can call the <code>fetch_weather</code> function and ...</p>
+</blockquote>
+<p>This gives the model the name of the function.</p>
+<blockquote>
+<p>... pass the <code>place</code> parameter (a string) with the place I mention. The place can be the name of a city or famous landmark, or an airport code ...</p>
+</blockquote>
+<p>This provides the model with detailed information about the parameters required by the function, and what kind of values the function expects.</p>
+<blockquote>
+<p>... The function will produce a JSON object containing information about the weather condition, temperature and winds for the given place.</p>
+</blockquote>
+<p>This tells the model what kind of output it can expect when it calls the function. Notice that this is missing the possible errors that the function can return.</p>
+<p>When you want to support tens and even hundreds of functions, it is necessary to find a structured way to provide this information. Structuring this information enables easier maintainability, reduces ambiguity introduced by poor wording, and allows for programmatic generation of function information. Luckily for us, a great way to structure this kind of information already exists - <a href="https://json-schema.org/docs">JSON schemas</a>!</p>
+<p>We use an OpenAPI-inspired JSON schema to provide information on the name of a function, what the function does, what parameters it accepts, the possible outputs it produces, the possible errors it throws, and examples of when to use it. We call these 'function specifications'. For our <code>fetch_weather</code> function, the specification would look something like this:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fetch_weather&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Fetches the current weather for a given location using the wttr.in API.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;place&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The location for which to fetch the weather. May be the name of a city, town, country or famous landmark, or an airport code.&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;place&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;responses&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;units&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;enum&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;imperial&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The system of units used for measurements (e.g., metric, imperial).&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A human-readable text description of the current weather condition.&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The current temperature. The unit is specified in the &#39;units&#39; field (e.g., Celsius for metric).&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;feels_like&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The perceived &#39;feels like&#39; temperature, accounting for factors like wind and humidity.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;wind_speed&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;minimum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The current wind speed. The unit depends on the &#39;units&#39; field (e.g., km/h for metric, mph for imperial).&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}],</span>
+<span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RequestException&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Raised if the API request fails or returns an error (e.g., invalid location, network issues).&quot;</span>
+<span class="w">  </span><span class="p">}]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="admonition note">
+<p>The JSON schema document used to validate function specifications can be found <a href="https://github.com/offline-function-calling/sdk/blob/main/docs/schemas/function.schema.json">here</a>.</p>
+</div>
+<p>Now that we have a structured and scalable way to define functions, we can instruct the model to 'discover' and use any functions that are described by a function specification:</p>
+<div class="admonition note">
+<p>You are a helpful assistant to me, the user. You have access to programmatic functions that you can invoke to better assist me. These functions are described via function specifications - essentially, your manual to using them. Each specification contains the name of the function, a detailed description on what it does, the parameters it accepts, the possible responses and errors it produces, and examples of when to use the given function. A function specification is a JSON object, provided by me in a special code block labelled <code>function_spec</code>, like so:</p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_spec</span>
+<span class="s">{</span>
+<span class="s">    &quot;name&quot;: the name of the function,</span>
+<span class="s">    &quot;description&quot;: a detailed description of what the function does,</span>
+<span class="s">    &quot;parameters&quot;: a dictionary of arguments to pass to the function,</span>
+<span class="s">    &quot;responses&quot;: a list of possible outputs the function can produce,</span>
+<span class="s">    &quot;errors&quot;: a list of possible errors the function can raise,</span>
+<span class="s">    &quot;examples&quot;: a list of examples of when to call the function</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<p>With this, we no longer require the function discovery prompt we wrote for the <code>fetch_weather</code> function in the previous tutorial. All we need to do is provide the specification for the function in a <code>function_spec</code> code block before asking it for the weather! This addresses our first problem.</p>
+<h3 id="structuring-function-calls-and-outputs">Structuring function calls and outputs</h3>
+<p>In our <a href="../hello-world/#instructing-the-model">initial function calling prompt</a>, we had instructed the model to produce python-style function calls in markdown code blocks. While this works for simple, single-call scenarios, it can become ambiguous when the model needs to call multiple functions at once. The current method of parsing function calls also means that our code will find and execute all python code in the model's responses, even code that is <em>not</em> a function call.</p>
+<p>Consider the following scenario:</p>
+<div class="admonition note">
+<p class="admonition-title"><code>you</code></p>
+<p>&nbsp;What's the weather in Pune and Hyderabad right now?</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title"><code>model</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```python</span>
+<span class="n">get_weather</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="s2">&quot;Pune&quot;</span><span class="p">)</span>
+<span class="sb">```</span>
+
+<span class="sb">```python</span>
+<span class="n">get_weather</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="s2">&quot;Hyderabad&quot;</span><span class="p">)</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition warning">
+<p class="admonition-title"><code>function output</code></p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;conditions&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Cloudy&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;feels_like&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">31</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;wind_speed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;units&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;metric&quot;</span>
+<span class="p">}</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;conditions&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Patchy rain&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">26</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;feels_like&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">28</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;wind_speed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;units&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;metric&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+<p>Since we asked the model for the weather at two locations, it produced two function calls in the same message. However, when we write the code to execute these two functions, we might run them in parallel to save time. This means we can't guarantee which one will finish first, and we cannot assume they came back in the same order you called them. In such a case, how do we tell the model which output is for Pune and which is for Hyderabad? One idea is to instruct the model to assign each function call an identifier. This identifier would be returned along with the output of the function call, which lets the model know which call produced what output.</p>
+<p>We could instruct the model to produce these new function calls and outputs in JSON wrapped in labelled markdown code blocks. This means our above conversation would instead look like this:</p>
+<div class="admonition note">
+<p class="admonition-title"><code>you</code></p>
+<p>&nbsp;What's the weather in Pune and Hyderabad right now?</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title"><code>model</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_call</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;fetch_weather_pune&quot;,</span>
+<span class="s">  &quot;function&quot;: &quot;fetch_weather&quot;</span>
+<span class="s">  &quot;parameters&quot;: {</span>
+<span class="s">    &quot;place&quot;: &quot;Pune&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+
+<span class="sb">```function_call</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;fetch_weather_hydb&quot;,</span>
+<span class="s">  &quot;function&quot;: &quot;fetch_weather&quot;</span>
+<span class="s">  &quot;parameters&quot;: {</span>
+<span class="s">    &quot;place&quot;: &quot;Hyderabad&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition warning">
+<p class="admonition-title"><code>function output</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_output</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;fetch_weather_hydb&quot;,</span>
+<span class="s">  &quot;result&quot;: {</span>
+<span class="s">    conditions&quot;: &quot;Cloudy&quot;,</span>
+<span class="s">    &quot;temperature&quot;: 30,</span>
+<span class="s">    &quot;feels_like&quot;: 31,</span>
+<span class="s">    &quot;wind_speed&quot;: 9,</span>
+<span class="s">    &quot;units&quot;: &quot;metric&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+
+<span class="sb">```function_output</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;fetch_weather_pune&quot;,</span>
+<span class="s">  &quot;result&quot;: {</span>
+<span class="s">    &quot;conditions&quot;: &quot;Patchy rain&quot;,</span>
+<span class="s">    &quot;temperature&quot;: 26,</span>
+<span class="s">    &quot;feels_like&quot;: 28,</span>
+<span class="s">    &quot;wind_speed&quot;: 23,</span>
+<span class="s">    &quot;units&quot;: &quot;metric&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<p>With this, the model will now be able to keep track of which function calls have been completed and what output they produce, even if the output is returned a few messages later or out of order. In addition, the <code>function_call</code> label on the code blocks makes it easier for us to programmatically extract function calls from the model's responses.</p>
+<p>Now that we have decided upon the structured function call and output formats, let us modify the function calling prompt:</p>
+<div class="admonition note">
+<p>You can call these functions by including special code blocks labelled function_call in your responses, like so:</p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_call</span>
+<span class="s">{</span>
+<span class="s">    &quot;id&quot;: a string used to pair the function call with its output,</span>
+<span class="s">    &quot;function&quot;: the name of the function to call,</span>
+<span class="s">    &quot;parameters&quot;: a dictionary of parameter names and values to pass to the function</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+<p>I will execute the function and the result of the function call will be returned in a special code block labelled function_output in their response, like so:</p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_output</span>
+<span class="s">{</span>
+<span class="s">    &quot;id&quot;: the same string provided when calling the function,</span>
+<span class="s">    &quot;result&quot;: the output of the function - present only when the function execution succeeds,</span>
+<span class="s">    &quot;error&quot;: the error thrown by the function - present only when the function raises an exception or throws an error</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<p>This means we would also need to change the code that deals with parsing function calls and collating function outputs. This is left as an exercise to the reader :)</p>
+<h3 id="handling-ambiguity-to-prevent-guesswork">Handling ambiguity to prevent guesswork</h3>
+<p>As the number of functions and parameters grows, the chances of the model making incorrect assumptions or hallucinating answers when it lacks information increase. To remedy this, we can include instructions that ask the model to figure out what information it has, decide what function to call, and then ask for clarification if it does not have sufficient information to proceed.</p>
+<div class="admonition note">
+<p>Before responding, briefly consider:</p>
+<ul>
+<li>what information do you need to fulfill the request?</li>
+<li>what functions, if any, can help?</li>
+<li>what are the potential dependencies between functions?</li>
+</ul>
+<p>If you need information that I haven't provided in the conversation uptil now, ask me for it. You must never, ever, guess or make assumptions.</p>
+</div>
+<h3 id="exposing-the-models-thought-process">Exposing the model's thought process</h3>
+<p>To better understand the reasons behind what the model does, we can ask it to output its thought process at the beginning of its response in a markdown code block labelled <code>thinking</code>:</p>
+<div class="admonition note">
+<p>Please preface all your responses with a special code block labelled <code>thinking</code> that includes your thoughts, observations, and justification for the actions you are taking. Include the considerations you made about the information required, the relevant functions, and any dependencies between functions.</p>
+</div>
+<h3 id="enabling-parallel-function-calls">Enabling parallel function calls</h3>
+<p>When a model needs to make more than one function call, it can make the calls in sequence (one after the other) or in parallel (all at the same time). Let us take an example to understand when we can call functions in parallel, and when we have to call them in sequence.</p>
+<p>Say we have a database of users which stores their favourite fruit, and a function called <code>run_sql_query</code> that allows the model to run arbitrary SQL queries on the database. Then, let us assign the model a task that:</p>
+<details>
+<summary><strong>Forces the model to call functions in a certain sequence</strong></summary>
+<div class="admonition note">
+<p class="admonition-title"><code>you</code></p>
+<p>&nbsp;Delete all users who like apples, and tell me the updated number of users in the database.</p>
+</div>
+<p>To accomplish this task, the model needs to make two queries, in the following order: the first to delete the users who like apples, and the second to count the number of users in the database <em>after the deletion</em>. Let us go through the checklist and see if these queries are independent:</p>
+<ul>
+<li>no, since the deletion query might acquire a read-write lock on the database, affecting the execution of the count query.</li>
+<li>yes, there is no data dependency between the queries - the result of one is not needed for the other to run.</li>
+<li>no, the count query reads the data that the deletion query will have deleted.</li>
+</ul>
+<p>Since these queries fail two of the checks, they are not independent. Thus, the model should call them in sequence, like so:</p>
+<div class="admonition info">
+<p class="admonition-title"><code>model</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_call</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;delete_users_apples&quot;,</span>
+<span class="s">  &quot;function&quot;: &quot;run_sql_query&quot;</span>
+<span class="s">  &quot;parameters&quot;: {</span>
+<span class="s">    &quot;query&quot;: &quot;delete from users where fruit = &#39;apple&#39;;&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition warning">
+<p class="admonition-title"><code>function_output</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_output</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;delete_users_apples&quot;,</span>
+<span class="s">  &quot;result&quot;: &quot;DELETE 37&quot;</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition info">
+<p class="admonition-title"><code>model</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_call</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;count_all_users&quot;,</span>
+<span class="s">  &quot;function&quot;: &quot;run_sql_query&quot;</span>
+<span class="s">  &quot;parameters&quot;: {</span>
+<span class="s">    &quot;query&quot;: &quot;select count(*) from users;&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition warning">
+<p class="admonition-title"><code>function_output</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_output</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;count_all_users&quot;,</span>
+<span class="s">  &quot;result&quot;: 55</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition info">
+<p class="admonition-title"><code>model</code></p>
+<p>&nbsp;After deleting the users whose favorite food is apples, the number of users left is 55.</p>
+</div>
+</details>
+<details>
+<summary><strong>Allows the model to call functions in parallel</strong></summary>
+<div class="admonition note">
+<p class="admonition-title"><code>you</code></p>
+<p>&nbsp;Count the number of users who like apples and the number of users who like oranges.</p>
+</div>
+<p>To accomplish this task, the model needs to make two queries: the first to count the number of users who like apples, and the second to count the number of users who like oranges. These two queries:</p>
+<ul>
+<li>yes, since queries do not affect each others' execution.</li>
+<li>yes, the result of one is not needed for the other to run.</li>
+<li>yes, the queries do not read data that will be created, updated or deleted by the other query.</li>
+</ul>
+<p>Since all three checks have passed, the queries are independent, and can be executed in parallel, like so:</p>
+<div class="admonition info">
+<p class="admonition-title"><code>model</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_call</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;count_apple_lovers&quot;,</span>
+<span class="s">  &quot;function&quot;: &quot;run_sql_query&quot;</span>
+<span class="s">  &quot;parameters&quot;: {</span>
+<span class="s">    &quot;query&quot;: &quot;select count(*) from users where fruit = &#39;apples&#39;;&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+
+<span class="sb">```function_call</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;count_orange_lovers&quot;,</span>
+<span class="s">  &quot;function&quot;: &quot;run_sql_query&quot;</span>
+<span class="s">  &quot;parameters&quot;: {</span>
+<span class="s">    &quot;query&quot;: &quot;select count(*) from users where fruit = &#39;oranges&#39;;&quot;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition warning">
+<p class="admonition-title"><code>function_output</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_output</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;count_orange_lovers&quot;,</span>
+<span class="s">  &quot;result&quot;: 13</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition warning">
+<p class="admonition-title"><code>function_output</code></p>
+<div class="codehilite"><pre><span></span><code><span class="sb">```function_output</span>
+<span class="s">{</span>
+<span class="s">  &quot;id&quot;: &quot;count_apple_lovers&quot;,</span>
+<span class="s">  &quot;result&quot;: 37</span>
+<span class="s">}</span>
+<span class="sb">```</span>
+</code></pre></div>
+
+</div>
+<div class="admonition info">
+<p class="admonition-title"><code>model</code></p>
+<p>&nbsp;The number of users that like apples is 37, and oranges is 13.</p>
+</div>
+</details>
+<p>Thus, adding the following to the function calling prompt should enable the model to perform calls in parallel when appropriate:</p>
+<div class="admonition note">
+<p>You are encouraged to combine subtasks and call functions in parallel by including multiple <code>function_call</code> code blocks in a single response IF AND ONLY IF:</p>
+<ul>
+<li>the functions do not affect each other's execution,</li>
+<li>the result of one or more function call(s) is not needed for the others to run, and</li>
+<li>a function does not need to read the data that another function has just created, updated, or deleted.</li>
+</ul>
+<p>Please note that the order in which functions execute is NOT guaranteed. If all the above conditions are not satisfied, do not call the dependent functions in parallel. It is generally safe to call the same function with different parameters in parallel when you need to fetch, update, create or delete multiple of the same kind of resources.</p>
+</div>
+<h3 id="putting-it-all-together">Putting it all together</h3>
+<p>Finally, combining all the additions and modifications we made to the function calling instructions over the course of this tutorial, we get our improved prompt. Click on the clipboard icon to copy the entire prompt as a string.</p>
+<div class="codehilite"><pre><span></span><code><span class="s2">&quot;You are a helpful assistant to me, the user.</span><span class="se">\n\n</span><span class="s2">You have access to programmatic functions that you can invoke to better assist me. These functions are described via function specifications - essentially, your manual to using them. Each specification contains the name of the function, a detailed description on what it does, the parameters it accepts, the possible responses and errors it produces, and examples of when to use the given function. A function specification is a JSON object, provided by me in a special code block labelled `function_spec`, like so:</span><span class="se">\n\n</span><span class="s2">```function_spec</span><span class="se">\n</span><span class="s2">{</span><span class="se">\n</span><span class="s2">    </span><span class="se">\&quot;</span><span class="s2">name</span><span class="se">\&quot;</span><span class="s2">: the name of the function,</span><span class="se">\n</span><span class="s2">    </span><span class="se">\&quot;</span><span class="s2">description</span><span class="se">\&quot;</span><span class="s2">: a detailed description of what the function does,</span><span class="se">\n</span><span class="s2">    </span><span class="se">\&quot;</span><span class="s2">parameters</span><span class="se">\&quot;</span><span class="s2">: a dictionary of arguments to pass to the function,</span><span class="se">\n</span><span class="s2">    </span><span class="se">\&quot;</span><span class="s2">responses</span><span class="se">\&quot;</span><span class="s2">: a list of possible outputs the function can produce,</span><span class="se">\n</span><span class="s2">    </span><span class="se">\&quot;</span><span class="s2">errors</span><span class="se">\&quot;</span><span class="s2">: a list of possible errors the function can raise,</span><span class="se">\n</span><span class="s2">    </span><span class="se">\&quot;</span><span class="s2">examples</span><span class="se">\&quot;</span><span class="s2">: a list of examples of when calling the function is required</span><span class="se">\n</span><span class="s2">}</span><span class="se">\n</span><span class="s2">```</span><span class="se">\n\n</span><span class="s2">You can call these functions by including special code blocks labelled `function_call` in your responses, like so:</span><span class="se">\n\n</span><span class="s2">```function_call</span><span class="se">\n</span><span class="s2">{</span><span class="se">\n\t\&quot;</span><span class="s2">id</span><span class="se">\&quot;</span><span class="s2">: a string used to pair the function call with its output,</span><span class="se">\n\t\&quot;</span><span class="s2">function</span><span class="se">\&quot;</span><span class="s2">: the name of the function to call,</span><span class="se">\n\t\&quot;</span><span class="s2">parameters</span><span class="se">\&quot;</span><span class="s2">: a dictionary of parameter names and values to pass to the function</span><span class="se">\n</span><span class="s2">}</span><span class="se">\n</span><span class="s2">```</span><span class="se">\n\n</span><span class="s2">I will execute the function and the result of the function call will be returned in a special code block labelled `function_output` in their response, like so:</span><span class="se">\n\n</span><span class="s2">```function_output</span><span class="se">\n</span><span class="s2">{</span><span class="se">\n\t\&quot;</span><span class="s2">id</span><span class="se">\&quot;</span><span class="s2">: the same string provided when calling the function,</span><span class="se">\n\t\&quot;</span><span class="s2">result</span><span class="se">\&quot;</span><span class="s2">: the output of the function - present only when the function execution succeeds,</span><span class="se">\n\t\&quot;</span><span class="s2">error</span><span class="se">\&quot;</span><span class="s2">: the error thrown by the function - present only when the function raises an exception or throws an error</span><span class="se">\n</span><span class="s2">}</span><span class="se">\n</span><span class="s2">```</span><span class="se">\n\n</span><span class="s2">Please remember the following guidelines while responding.</span><span class="se">\n\n</span><span class="s2">If you need information that I haven&#39;t provided in the conversation uptil now, *ask me for it*. You must never, ever, guess or make assumptions. This is a critical safeguard that prevents hallucinations.</span><span class="se">\n\n</span><span class="s2">Before responding, briefly consider:</span><span class="se">\n\n</span><span class="s2">- what information do you need to fulfill the request?</span><span class="se">\n</span><span class="s2">- what functions, if any, can help?</span><span class="se">\n</span><span class="s2">- what are the potential dependencies between functions?</span><span class="se">\n\n</span><span class="s2">You are encouraged to combine subtasks and call functions in parallel by including multiple `function_call` blocks in a single response IF AND ONLY IF:</span><span class="se">\n\n</span><span class="s2">- the functions do not affect each other&#39;s execution,</span><span class="se">\n</span><span class="s2">- the result of one or more function call(s) is not needed for the others to run, and</span><span class="se">\n</span><span class="s2">- a function does not need to read the data that another function has just created, updated, or deleted.</span><span class="se">\n\n</span><span class="s2">Please note that the order in which functions execute is NOT guaranteed. If all the above conditions are not satisfied, do not call the dependent functions in parallel. It is generally safe to call the same function with different parameters in parallel when you need to fetch, update, create or delete multiple of the same kind of resources.</span><span class="se">\n\n</span><span class="s2">Ensure your final response fully addresses my request, and is helpful to me.</span><span class="se">\n\n</span><span class="s2">Please preface all your responses with a special code block labelled `thinking` that include your thoughts, observations and justification for actions that you are taking. Include the guidelines you have followed and not followed while producing your response as well.</span><span class="se">\n</span><span class="s2">&quot;</span>
+</code></pre></div>
+
+<p>Providing this prompt to a model enables function calling, and providing function specifications enables it to discover which functions it can call. After that, we can start giving it tasks, just like we did in the previous tutorial!</p>
+<h2 id="whats-next">What's next</h2>
+<p>In <a href="../dynamic-function-generation/">the next tutorial</a>, we'll explore how to get offline LLMs to both generate and call functions for us!</p>
+</article>
+                        </div>
+                        
+                        <div class="hidden text-sm xl:block">
+                            <div class="sticky top-20 -mt-6 pt-4">
+    <div class="no-scrollbar h-full overflow-auto pb-10">
+        <div class="space-y-2">
+            <p class="font-medium">On This Page</p>
+            <ul class="m-0 list-none">
+                
+                
+                
+                
+                <li class="mt-0 pt-2">
+                    <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                        href="#how-we-did-it">How we did it</a>
+                    
+                </li>
+                
+                <li class="mt-0 pt-2">
+                    <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                        href="#what-we-can-do-better">What we can do better</a>
+                    
+                </li>
+                
+                <li class="mt-0 pt-2">
+                    <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                        href="#how-we-can-do-it-better">How we can do it better</a>
+                    
+                    <ul class="m-0 list-none pl-4">
+                        
+                        <li class="mt-0 pt-2">
+                            <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                                href="#using-function-specifications-for-discovery">Using function specifications for discovery</a>
+                        </li>
+                        
+                        <li class="mt-0 pt-2">
+                            <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                                href="#structuring-function-calls-and-outputs">Structuring function calls and outputs</a>
+                        </li>
+                        
+                        <li class="mt-0 pt-2">
+                            <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                                href="#handling-ambiguity-to-prevent-guesswork">Handling ambiguity to prevent guesswork</a>
+                        </li>
+                        
+                        <li class="mt-0 pt-2">
+                            <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                                href="#exposing-the-models-thought-process">Exposing the model's thought process</a>
+                        </li>
+                        
+                        <li class="mt-0 pt-2">
+                            <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                                href="#enabling-parallel-function-calls">Enabling parallel function calls</a>
+                        </li>
+                        
+                        <li class="mt-0 pt-2">
+                            <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                                href="#putting-it-all-together">Putting it all together</a>
+                        </li>
+                        
+                    </ul>
+                    
+                </li>
+                
+                <li class="mt-0 pt-2">
+                    <a class="inline-block no-underline transition-colors hover:text-foreground text-muted-foreground"
+                        href="#whats-next">What's next</a>
+                    
+                </li>
+                
+                
+                
+                
+            </ul>
+        </div>
+    </div>
+</div>
+                        </div>
+                        
+                    </main>
+                </div>
+            </div>
+            <dialog id="bottom-sidebar" data-closing="0"
+    class="backdrop:bg-black backdrop:opacity-80 backdrop:transition-all backdrop:duration-500 text-foreground"
+    onclick="onBottomSidebarDialogClick(event)">
+    <div
+        class="fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background max-h-[60svh] p-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+        <div class="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted"></div>
+        <div class="overflow-auto p-6 space-y-3">
+            
+            
+
+            <div class="flex flex-col">
+                
+                
+                <a href="../.." class="text-base shrink-0">
+    Overview
+</a>
+                
+                
+            </div>
+            
+
+            <div class="flex flex-col">
+                
+                <div class="flex flex-col space-y-3 pt-4">
+                    <h4 class="font-medium">Setup </h4>
+                    
+                    <a href="../../setup/cli/" class="text-base shrink-0">
+    CLI
+</a>
+                    
+                    <a href="../../setup/models/" class="text-base shrink-0">
+    Models
+</a>
+                    
+                    <a href="../../setup/tools/" class="text-base shrink-0">
+    Tools
+</a>
+                    
+                </div>
+                
+            </div>
+            
+
+            <div class="flex flex-col">
+                
+                <div class="flex flex-col space-y-3 pt-4">
+                    <h4 class="font-medium">Learn </h4>
+                    
+                    <a href="../hello-world/" class="text-base shrink-0">
+    Hello, Function Calling!
+</a>
+                    
+                    <a href="./" class="text-base shrink-0">
+    Structuring and Scaling
+</a>
+                    
+                    <a href="../dynamic-function-generation/" class="text-base shrink-0">
+    Dynamic Function Generation
+</a>
+                    
+                    <a href="../multimodal-input/" class="text-base shrink-0">
+    Multimodal Input
+</a>
+                    
+                </div>
+                
+            </div>
+            
+
+            <div class="flex flex-col">
+                
+                <div class="flex flex-col space-y-3 pt-4">
+                    <h4 class="font-medium">Benchmarks </h4>
+                    
+                    <a href="../../bench/leaderboard/" class="text-base shrink-0">
+    Leaderboard
+</a>
+                    
+                    <a href="../../bench/methodology/" class="text-base shrink-0">
+    Methodology
+</a>
+                    
+                </div>
+                
+            </div>
+            
+            
+        </div>
+    </div>
+</dialog>
+        </div>
+    </div> 
+    
+    <script src="../../search/main.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/iconify-icon@2.3.0/dist/iconify-icon.min.js"></script>
+    <script src="../../js/copy-button.js"></script>
+</body>
+
+</html>
